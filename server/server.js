@@ -16,7 +16,17 @@ const app = express();
 
 // Security & Middleware
 app.use(helmet());
-app.use(cors());
+
+const allowedOrigins = [
+  'http://localhost:5173',       // local dev
+  process.env.CLIENT_URL,        // production Vercel URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // Rate Limiting
@@ -36,6 +46,9 @@ app.use('/api/', apiLimiter);
 app.use('/api/auth', authLimiter);
 app.use('/api/bookings/send-otp', authLimiter);
 app.use('/api/bookings/resend-otp', authLimiter);
+
+// Health Check (for Render monitoring)
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 
 // Routes
 app.use('/api/auth', authRoutes);
