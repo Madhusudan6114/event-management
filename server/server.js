@@ -14,6 +14,9 @@ const bookingRoutes = require('./routes/bookings');
 
 const app = express();
 
+// Trust proxy (required for Render/Vercel — they run behind a reverse proxy)
+app.set('trust proxy', 1);
+
 // Security & Middleware
 app.use(helmet());
 
