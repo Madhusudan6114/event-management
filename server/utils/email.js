@@ -1,25 +1,17 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Use your verified domain email, or 'onboarding@resend.dev' for testing
+const FROM_EMAIL = process.env.EMAIL_FROM || 'Eventora <onboarding@resend.dev>';
 
 const sendBookingEmail = async (userEmail, userName, eventTitle) => {
     try {
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
+        await resend.emails.send({
+            from: FROM_EMAIL,
             to: userEmail,
             subject: `Booking Confirmed: ${eventTitle}`,
             html: `
@@ -27,8 +19,7 @@ const sendBookingEmail = async (userEmail, userName, eventTitle) => {
         <p>Your booking for the event <strong>${eventTitle}</strong> is successfully confirmed.</p>
         <p>Thank you for choosing Eventora.</p>
       `
-        };
-        await transporter.sendMail(mailOptions);
+        });
         console.log('Email sent successfully to', userEmail);
     } catch (error) {
         console.error('Error sending email:', error);
@@ -42,8 +33,8 @@ const sendOTPEmail = async (userEmail, otp, type) => {
             ? 'Please use the following OTP to verify your new Eventora account.'
             : 'Please use the following OTP to verify and confirm your event booking.';
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
+        await resend.emails.send({
+            from: FROM_EMAIL,
             to: userEmail,
             subject: title,
             html: `
@@ -56,8 +47,7 @@ const sendOTPEmail = async (userEmail, otp, type) => {
                     <p style="color: #999; font-size: 12px;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
                 </div>
             `
-        };
-        await transporter.sendMail(mailOptions);
+        });
         console.log(`OTP sent to ${userEmail} for ${type}`);
     } catch (error) {
         console.error('Error sending OTP email:', error);
