@@ -20,13 +20,24 @@ app.set('trust proxy', 1);
 // Security & Middleware
 app.use(helmet());
 
-const allowedOrigins = [
-  'http://localhost:5173',       // local dev
-  process.env.CLIENT_URL,        // production Vercel URL
-].filter(Boolean);
-
 app.use(cors({
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    const allowed = [
+      'http://localhost:5173',
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+
+    // Check exact match
+    if (allowed.includes(origin)) return callback(null, true);
+
+    // Allow any Vercel preview deployment (*.vercel.app)
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
