@@ -1,31 +1,10 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
-const OTP = require('../models/OTP');
-const { sendBookingEmail, sendOTPEmail } = require('../utils/email');
-
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-exports.sendBookingOTP = async (req, res) => {
-    try {
-        const otp = generateOTP();
-        await OTP.findOneAndDelete({ email: req.user.email, action: 'event_booking' });
-        await OTP.create({ email: req.user.email, otp, action: 'event_booking' });
-        await sendOTPEmail(req.user.email, otp, 'event_booking');
-        res.json({ message: 'OTP sent successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Error sending OTP', error: error.message });
-    }
-};
+const { sendBookingEmail } = require('../utils/email');
 
 exports.bookEvent = async (req, res) => {
     try {
-        const { eventId, otp } = req.body;
-
-        // Verify OTP explicitly before proceeding
-        const validOTP = await OTP.findOne({ email: req.user.email, otp, action: 'event_booking' });
-        if (!validOTP) {
-            return res.status(400).json({ message: 'Invalid or expired OTP for booking' });
-        }
+        const { eventId } = req.body;
 
         const event = await Event.findById(eventId);
         if (!event) return res.status(404).json({ message: 'Event not found' });
@@ -43,8 +22,6 @@ exports.bookEvent = async (req, res) => {
             paymentStatus: 'not_paid',
             amount: event.ticketPrice
         });
-
-        await OTP.deleteOne({ _id: validOTP._id }); // cleanup
 
         res.status(201).json({ message: 'Booking request submitted', booking });
     } catch (error) {
@@ -77,8 +54,12 @@ exports.confirmBooking = async (req, res) => {
         }
         await booking.save();
 
-        // Send email on admin confirmation
-        await sendBookingEmail(booking.userId.email, booking.userId.name, booking.eventId.title);
+        // Send email on admin confirmation (best-effort, don't fail booking if email fails)
+        try {
+            await sendBookingEmail(booking.userId.email, booking.userId.name, booking.eventId.title);
+        } catch (emailErr) {
+            console.error('Booking confirmed but email failed:', emailErr.message);
+        }
 
         res.json({ message: 'Booking confirmed successfully', booking });
     } catch (error) {

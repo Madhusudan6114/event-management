@@ -6,45 +6,19 @@ const Register = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [otp, setOtp] = useState('');
-    const [showOTP, setShowOTP] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const [resendMsg, setResendMsg] = useState('');
-    const [resendLoading, setResendLoading] = useState(false);
-
-    const { register, verifyOTP, resendOTP } = useContext(AuthContext);
+    const { register } = useContext(AuthContext);
     const navigate = useNavigate();
-
-    const handleResend = async () => {
-        setResendLoading(true);
-        setResendMsg('');
-        setError('');
-        try {
-            const data = await resendOTP(email, 'account_verification');
-            setResendMsg(data.message || 'New OTP sent to email.');
-        } catch (err) {
-            setError(err);
-        } finally {
-            setResendLoading(false);
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
-        setResendMsg('');
         try {
-            if (!showOTP) {
-                await register(name, email, password);
-                setShowOTP(true);
-                setError('');
-            } else {
-                await verifyOTP(email, otp);
-                navigate('/dashboard');
-            }
+            await register(name, email, password);
+            navigate('/dashboard');
         } catch (err) {
             setError(err);
         } finally {
@@ -60,84 +34,51 @@ const Register = () => {
             </div>
 
             {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-6 text-center shadow-inner border border-red-100">{error}</div>}
-            {resendMsg && <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-6 text-center shadow-inner border border-green-100">{resendMsg}</div>}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-                {!showOTP ? (
-                    <>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-                            <input
-                                type="text"
-                                required
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                            <input
-                                type="email"
-                                required
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                            <input
-                                type="password"
-                                required
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <div>
-                        <p className="text-sm text-green-700 bg-green-50 p-3 mb-4 rounded border border-green-200">
-                            An OTP has been sent to your email. Please verify your account.
-                        </p>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Verification Code (OTP)</label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="6-digit code"
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm font-bold tracking-widest text-center text-lg"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                            maxLength="6"
-                        />
-                        <div className="text-right mt-2">
-                            <button
-                                type="button"
-                                onClick={handleResend}
-                                disabled={resendLoading}
-                                className="text-xs font-semibold text-gray-600 hover:text-black underline"
-                            >
-                                {resendLoading ? 'Sending...' : 'Resend OTP'}
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                    <input
+                        type="text"
+                        required
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                    <input
+                        type="email"
+                        required
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                    <input
+                        type="password"
+                        required
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-gray-700 transition shadow-sm"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                </div>
 
                 <button
                     type="submit"
                     disabled={loading}
                     className="w-full bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-black focus:ring-4 focus:ring-gray-200 transition shadow-md mt-4"
                 >
-                    {loading ? 'Processing...' : (showOTP ? 'Verify & Complete' : 'Sign Up')}
+                    {loading ? 'Processing...' : 'Sign Up'}
                 </button>
             </form>
 
-            {!showOTP && (
-                <p className="text-center mt-6 text-gray-600">
-                    Already have an account? <Link to="/login" className="text-gray-900 font-bold hover:underline">Sign in</Link>
-                </p>
-            )}
+            <p className="text-center mt-6 text-gray-600">
+                Already have an account? <Link to="/login" className="text-gray-900 font-bold hover:underline">Sign in</Link>
+            </p>
         </div>
     );
 };

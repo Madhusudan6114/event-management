@@ -7,17 +7,13 @@ import { FaCalendarAlt, FaMapMarkerAlt, FaChair, FaMoneyBillWave } from 'react-i
 const EventDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user, resendOTP } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [bookingLoading, setBookingLoading] = useState(false);
-    const [otp, setOtp] = useState('');
-    const [showOTP, setShowOTP] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('card');
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
-    const [resendLoading, setResendLoading] = useState(false);
-    const [resendMsg, setResendMsg] = useState('');
 
     useEffect(() => {
         const fetchEvent = async () => {
@@ -33,20 +29,6 @@ const EventDetail = () => {
         fetchEvent();
     }, [id]);
 
-    const handleResendOTP = async () => {
-        setResendLoading(true);
-        setResendMsg('');
-        setError('');
-        try {
-            await api.post('/bookings/send-otp');
-            setResendMsg('A new OTP has been sent to your email.');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Error resending OTP');
-        } finally {
-            setResendLoading(false);
-        }
-    };
-
     const handleBooking = async () => {
         if (!user) {
             navigate('/login');
@@ -55,23 +37,16 @@ const EventDetail = () => {
         setBookingLoading(true);
         setError('');
         setSuccessMsg('');
-        setResendMsg('');
 
         try {
-            if (!showOTP) {
-                await api.post('/bookings/send-otp');
-                setShowOTP(true);
-                setSuccessMsg('OTP sent to your email. Please verify to confirm booking.');
-            } else {
-                await api.post('/bookings', { eventId: event._id, otp });
-                // Navigate to Payment Success page
-                navigate('/payment-success', {
-                    state: {
-                        eventTitle: event.title,
-                        amount: event.ticketPrice
-                    }
-                });
-            }
+            await api.post('/bookings', { eventId: event._id });
+            // Navigate to Payment Success page
+            navigate('/payment-success', {
+                state: {
+                    eventTitle: event.title,
+                    amount: event.ticketPrice
+                }
+            });
         } catch (err) {
             setError(err.response?.data?.message || 'Booking failed');
         } finally {
@@ -181,44 +156,18 @@ const EventDetail = () => {
                             </div>
                         )}
 
-                        {showOTP && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Enter OTP to Confirm</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="6-digit code"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-gray-700 transition shadow-sm font-bold tracking-widest text-center text-lg"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
-                                    maxLength="6"
-                                />
-                                <div className="text-right mt-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleResendOTP}
-                                        disabled={resendLoading}
-                                        className="text-xs font-semibold text-gray-600 hover:text-black underline"
-                                    >
-                                        {resendLoading ? 'Sending...' : 'Resend OTP'}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
                         <button
                             onClick={handleBooking}
-                            disabled={isSoldOut || bookingLoading || (showOTP && !otp)}
-                            className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition shadow-lg ${isSoldOut || (successMsg && !showOTP)
+                            disabled={isSoldOut || bookingLoading}
+                            className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition shadow-lg ${isSoldOut
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-gray-900 hover:bg-black text-white hover:shadow-xl hover:-translate-y-1'
                                 }`}
                         >
-                            {bookingLoading ? 'Processing...' : (showOTP ? 'Verify OTP & Confirm' : (successMsg && !showOTP ? 'Request Sent' : (isSoldOut ? 'Sold Out' : 'Confirm Registration')))}
+                            {bookingLoading ? 'Processing...' : (isSoldOut ? 'Sold Out' : 'Confirm Registration')}
                         </button>
                         {error && <p className="text-red-500 mt-4 text-center font-medium bg-red-50 p-2 rounded">{error}</p>}
-                        {resendMsg && <p className="text-green-600 mt-4 text-center font-medium bg-green-50 p-2 rounded">{resendMsg}</p>}
-                        {successMsg && !resendMsg && <p className="text-green-600 mt-4 text-center font-medium bg-green-50 p-2 rounded">{successMsg}</p>}
+                        {successMsg && <p className="text-green-600 mt-4 text-center font-medium bg-green-50 p-2 rounded">{successMsg}</p>}
                     </div>
                 </div>
             </div>

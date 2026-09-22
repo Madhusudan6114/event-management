@@ -47,8 +47,6 @@ const authLimiter = rateLimit({
 
 app.use('/api/', apiLimiter);
 app.use('/api/auth', authLimiter);
-app.use('/api/bookings/send-otp', authLimiter);
-app.use('/api/bookings/resend-otp', authLimiter);
 
 // Health Check (for Render monitoring)
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
